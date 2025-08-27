@@ -1,0 +1,32 @@
+From e62e6599b12f192b0d7b08b30f1c5ed01e8d6c4b Mon Sep 17 00:00:00 2001
+From: user
+Date: Wed, 11 Dec 2019 09:55:28 -0500
+Subject: [PATCH 3/3] Log IANA PEN register open message at INFO
+
+On our windows build will not include the IANA PEN registry
+so this message gets printed all the time which will worry the users.
+So reducing this message from LOG_ERR to LOG_INFO to eliminate it
+unless the -v option is used to get INFO level messages.
+
+Our usecase for ipmitool is only for SOL, and there isn't any need
+for the IANA PEN registery to be updated from the file.
+---
+ lib/ipmi_strings.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/ipmi_strings.c b/lib/ipmi_strings.c
+index aab50f6..bf5cd17 100644
+--- a/lib/ipmi_strings.c
++++ b/lib/ipmi_strings.c
+@@ -1494,7 +1494,7 @@ int oem_info_list_load(oem_valstr_list_t **list)
+ 		 */
+ 		in = fopen(IANADIR PATH_SEPARATOR IANA_PEN_REGISTRY, "r");
+ 		if (!in) {
+-			lperror(LOG_ERR, "IANA PEN registry open failed");
++			lperror(LOG_INFO, "IANA PEN registry open failed");
+ 			return -1;
+ 		}
+ 	}
+-- 
+2.16.2
+

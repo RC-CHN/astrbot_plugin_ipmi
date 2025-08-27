@@ -1,0 +1,53 @@
+From 5c89e1b7342f946a36b37d29017eb799f2be576b Mon Sep 17 00:00:00 2001
+From: user
+Date: Wed, 11 Dec 2019 09:31:15 -0500
+Subject: [PATCH 1/3] Revert "ID: 38 - Protocol violating SOL retries when
+ talking to SIMSO-HTC"
+
+This reverts commit 51198a17490e5c81f675fee9a4bb042de65a7a96.
+
+This commit added a break in ipmi_lanplus_send_payload causing it
+to return upon recpt of unexpected packet.  In the original authors
+case, it was recpt of a non SOL packet.  However, it's possible to
+get a 'unexpected ' new SOL packet from the BMC, which the
+function processes properly, but the break causes the function to
+return w/o waiting for the ACK of the SOL packet it was processing.
+The callers of this function expect ipmi_lanplus_send_payload to
+wait for ACK of the SOL packet so there are no retries to deal
+with this premature exit out of the function.  This can lead to
+lost data or hung connections if the original packet or
+it's ACK was dropped by the network.
+
+A better fix is required for ID 38 to deal with unexpected rect
+of non SOL packets that doesn't break the ACK processing for
+the SOL packet in flight.
+---
+ src/plugins/lanplus/lanplus.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/src/plugins/lanplus/lanplus.c b/src/plugins/lanplus/lanplus.c
+index f5aba5e..552ce37 100644
+--- a/src/plugins/lanplus/lanplus.c
++++ b/src/plugins/lanplus/lanplus.c
+@@ -2303,10 +2303,6 @@ ipmi_lanplus_send_payload(
+ 
+ 			rsp = ipmi_lanplus_recv_sol(intf); /* Grab the next packet */
+ 
+-			if (!is_sol_packet(rsp)) {
+-				break;
+-			}
+-
+ 			if (sol_response_acks_packet(rsp, payload))
+ 				break;
+ 
+@@ -2319,7 +2315,6 @@ ipmi_lanplus_send_payload(
+ 				intf->session->sol_data.sol_input_handler(rsp);
+ 				/* In order to avoid duplicate output, just set data_len to 0 */
+ 				rsp->data_len = 0;
+-				break;
+ 			}
+ 		}
+ 
+-- 
+2.16.2
+

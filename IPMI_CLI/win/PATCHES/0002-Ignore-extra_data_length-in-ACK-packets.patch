@@ -1,0 +1,37 @@
+From f889cce592f55c01d456636d22a966f392c80c2a Mon Sep 17 00:00:00 2001
+From: user
+Date: Wed, 11 Dec 2019 09:51:24 -0500
+Subject: [PATCH 2/3] Ignore extra_data_length in ACK packets
+
+This change could be removed after the BMC fixes this issue, but
+is also safe to leave in code because ACK only packets should
+never have data.
+---
+ src/plugins/lanplus/lanplus.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/src/plugins/lanplus/lanplus.c b/src/plugins/lanplus/lanplus.c
+index 552ce37..0a933aa 100644
+--- a/src/plugins/lanplus/lanplus.c
++++ b/src/plugins/lanplus/lanplus.c
+@@ -841,6 +841,22 @@ ipmi_lan_poll_single(struct ipmi_intf * intf)
+ 		}
+ 		read_sol_packet(rsp, &offset);
+ 		extra_data_length = payload_size - (offset - payload_start);
++
++                 
++                 lprintf(LOG_DEBUG+2,
++                     "Extra Data %d on Sequence # %d, payload_size %d, start %d offset %d",
++                     extra_data_length, rsp->payload.sol_packet.packet_sequence_number,
++                     payload_size, payload_start, offset
++                 );
++                 if (rsp->payload.sol_packet.packet_sequence_number == 0) {
++                         extra_data_length = 0;
++                 }
++
+ 		if (extra_data_length > 0) {
+ 			rsp->data_len = extra_data_length;
+ 			memmove(rsp->data, rsp->data + offset, extra_data_length);
+-- 
+2.16.2
+

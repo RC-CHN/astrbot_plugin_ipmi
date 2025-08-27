@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "description": "要管理的 IPMI 服务器列表",
+    "type": "list",
+    "hint": "每个条目是一个 JSON 字符串，格式为：{\"name\": \"别名\", \"host\": \"IP地址\", \"username\": \"用户名\", \"password\": \"密码\"}",
+    "items": {
+      "type": "string"
+    }
+  }
+}
